@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Traffic Control OS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">🚦</span><div><b>SMART TRAFFIC</b><small>OPERATING SYSTEM</small></div></div>
+    <nav>
+      <a class="active" href="#dashboard">▦ &nbsp; Dashboard</a>
+      <a href="#vehicles">🚘 &nbsp; Vehicle Management</a>
+      <a href="#scheduling">⚙ &nbsp; CPU Scheduling</a>
+      <a href="#resources">▤ &nbsp; Resource Management</a>
+      <a href="#scenarios">⚠ &nbsp; Scenario Simulator</a>
+      <a href="#reports">▥ &nbsp; Reports & Analytics</a>
+    </nav>
+    <div class="sidebar-note"><span class="live-dot"></span> Simulation environment<br><small>Educational OS project</small></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><p class="eyebrow">OPERATING SYSTEMS PROJECT</p><h1>Smart Traffic Control</h1><p class="muted">Manage traffic processes, scheduling and intersection resources.</p></div>
+      <div class="top-actions"><span class="status-pill" id="statusPill"><i></i> <span id="statusText">SIMULATOR READY</span></span></div>
+    </header>
+
+    <section id="dashboard" class="section">
+      <div class="section-heading"><div><h2>Traffic overview</h2><p class="muted">Run a simulation to populate live metrics and process information.</p></div>
+        <div class="button-row"><span class="run-msg" id="runMsg" role="alert"></span><button class="btn secondary" id="resetBtn">Reset</button><button class="btn primary" id="runBtn">▶ Run simulation</button></div>
+      </div>
+      <div class="metric-grid">
+        <article class="metric"><span>Average waiting time</span><strong id="avgWait">—</strong><small>Time units</small></article>
+        <article class="metric"><span>Maximum queue length</span><strong id="maxQueue">—</strong><small>Vehicles</small></article>
+        <article class="metric"><span>Throughput</span><strong id="throughput">—</strong><small>Vehicles / unit</small></article>
+        <article class="metric"><span>Signal utilization</span><strong id="signalUtil">—</strong><small>Percentage</small></article>
+        <article class="metric"><span>Vehicles completed</span><strong id="completedCount">—</strong><small>Completed</small></article>
+        <article class="metric"><span>Emergency response</span><strong id="emergencyResponse">—</strong><small>Time units (arrival → first service)</small></article>
+      </div>
+      <div class="live-grid">
+        <div class="live"><span>Scenario</span><b id="liveScenario">Normal traffic</b></div>
+        <div class="live"><span>Current green signal</span><b id="liveGreen">—</b></div>
+        <div class="live"><span>Running vehicle</span><b id="liveRunning">—</b></div>
+        <div class="live"><span>Simulation status</span><b id="liveStatus">Not started</b></div>
+      </div>
+      <div class="dir-counts" id="dirCountsDash"></div>
+      <div class="dashboard-grid">
+        <article class="panel intersection-panel">
+          <div class="panel-title"><div><h3>Intersection simulation</h3><p class="muted">Four-way junction • simulated service direction</p></div><span class="tag" id="activeSignal">No active signal</span></div>
+          <div class="intersection" id="intersection">
+            <div class="road road-v"></div><div class="road road-h"></div>
+            <div class="lane-label north" id="laneNorth">NORTH</div><div class="lane-label south" id="laneSouth">SOUTH</div>
+            <div class="lane-label east" id="laneEast">EAST</div><div class="lane-label west" id="laneWest">WEST</div>
+            <div class="center-box" id="centerBox"><span id="centerIcon">🚦</span><b id="centerStatus">READY</b><small id="centerSub">INTERSECTION</small></div>
+            <div class="traffic-light tl-n" id="lightNorth"><i></i><i></i><i></i></div>
+            <div class="traffic-light tl-s" id="lightSouth"><i></i><i></i><i></i></div>
+            <div class="traffic-light tl-e" id="lightEast"><i></i><i></i><i></i></div>
+            <div class="traffic-light tl-w" id="lightWest"><i></i><i></i><i></i></div>
+            <div class="queue q-n" id="queueNorth"></div><div class="queue q-s" id="queueSouth"></div>
+            <div class="queue q-e" id="queueEast"></div><div class="queue q-w" id="queueWest"></div>
+          </div>
+          <div class="player" id="player">
+            <button class="icon-btn" id="prevBtn" title="Step back">⏮</button>
+            <button class="icon-btn play" id="playBtn" title="Play / pause">▶</button>
+            <button class="icon-btn" id="nextBtn" title="Step forward">⏭</button>
+            <input type="range" id="scrub" min="0" max="0" value="0" disabled>
+            <span class="clock" id="clock">T = 0</span>
+            <select id="speed" title="Playback speed"><option value="1100">0.5×</option><option value="650" selected>1×</option><option value="300">2×</option><option value="140">4×</option></select>
+          </div>
+          <div class="now-bar" id="nowBar">Run a simulation, then press play to watch the signals rotate.</div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><h3>Process states</h3><p class="muted">OS process lifecycle summary</p></div></div>
+          <div class="state-list">
+            <div><span class="state-dot new"></span>New <b id="stateNew">0</b></div>
+            <div><span class="state-dot ready"></span>Ready <b id="stateReady">0</b></div>
+            <div><span class="state-dot running"></span>Running <b id="stateRunning">0</b></div>
+            <div><span class="state-dot waiting"></span>Waiting <b id="stateWaiting">0</b></div>
+            <div><span class="state-dot terminated"></span>Terminated <b id="stateTerminated">0</b></div>
+          </div>
+          <p class="muted small">States update during playback. A vehicle waiting on a red signal is <b>Waiting</b>, never Running.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="vehicles" class="section">
+      <div class="section-heading"><div><h2>Vehicle & process management</h2><p class="muted">Add vehicles as processes with PID, arrival time and service time (whole time units).</p></div></div>
+      <article class="panel">
+        <form id="vehicleForm" class="vehicle-form" novalidate>
+          <label>Process ID<input id="pid" placeholder="Auto-generated if blank" maxlength="12" autocomplete="off"></label>
+          <label>Vehicle type<select id="vehicleType"><option>Car</option><option>Bike</option><option>Bus</option><option>Truck</option><option>Ambulance</option><option>Fire Engine</option></select></label>
+          <label>Direction<select id="direction"><option>North</option><option>South</option><option>East</option><option>West</option></select></label>
+          <label>Arrival time (≥ 0)<input id="arrival" type="number" min="0" step="1" value="0" required></label>
+          <label>Service time (≥ 1)<input id="service" type="number" min="1" step="1" value="3" required></label>
+          <button class="btn primary form-button" type="submit" id="addBtn">＋ Add vehicle</button>
+        </form>
+        <p class="form-error" id="formError" role="alert"></p>
+        <p class="lock-note" id="lockNote" hidden>🔒 A simulation is in progress, so vehicle data is locked. Let it finish (or press Reset) to edit vehicles.</p>
+        <div class="dir-counts" id="dirCountsVeh"></div>
+        <div class="table-wrap"><table><thead><tr><th>PID</th><th>Vehicle</th><th>Direction</th><th>Arrival</th><th>Service</th><th>State</th><th></th></tr></thead><tbody id="vehicleRows"><tr><td colspan="7" class="empty">No vehicles yet. Add a vehicle or load sample data.</td></tr></tbody></table></div>
+        <div class="button-row table-actions"><button class="btn secondary" id="sampleBtn" type="button">Load sample vehicles</button><button class="btn text-btn" id="clearVehicles" type="button">Clear vehicles</button></div>
+      </article>
+    </section>
+
+    <section id="scheduling" class="section">
+      <div class="section-heading"><div><h2>CPU scheduling</h2><p class="muted">Ambulance preemptive priority, normal vehicles FCFS per direction, signals Round Robin.</p></div></div>
+      <article class="panel">
+        <div class="settings-row">
+          <div class="policy-cards">
+            <div class="policy-step p1"><em>1</em><div><b>🚑 Ambulance</b><p>Preemptive priority. Detected on arrival, interrupts a crossing vehicle, FCFS among ambulances. One all-red unit keeps conflicting directions from being green together.</p></div></div>
+            <div class="policy-step p2"><em>2</em><div><b>🚗 Normal vehicles</b><p>FCFS inside each directional queue. A later vehicle never overtakes an earlier one in the same direction.</p></div></div>
+            <div class="policy-step p3"><em>3</em><div><b>🚦 Traffic signals</b><p>Round Robin N → S → E → W with the time quantum. Empty or disabled directions are skipped.</p></div></div>
+          </div>
+          <div class="rr-wrap"><div class="rr-ring" id="rrRing"><span data-d="North">N</span><i>→</i><span data-d="South">S</span><i>→</i><span data-d="East">E</span><i>→</i><span data-d="West">W</span><i>↺</i></div><small>SJF is not used.</small></div>
+          <label id="quantumWrap">Signal time quantum (RR)<input id="quantum" type="number" min="1" step="1" value="2"></label>
+          <label>Lane capacity / direction<input id="laneCapacity" type="number" min="1" step="1" value="4"></label>
+          <label class="check"><input id="releaseOnFinish" type="checkbox" checked> Release green when the vehicle finishes</label>
+        </div>
+        <div class="subheading">Gantt chart <span class="legend"><i class="amb"></i>Ambulance <i class="veh"></i>Normal <i class="idl"></i>Idle <i class="clr"></i>All-red clearance <i class="bolt-i">⚡</i>Emergency preemption</span></div>
+        <div id="gantt" class="gantt"><p class="empty">Run the simulation to see process execution.</p></div>
+        <div class="subheading">Scheduling results</div>
+        <div class="table-wrap"><table><thead><tr><th>PID</th><th>Start</th><th>Completion</th><th>Waiting</th><th>Turnaround</th><th>Response</th></tr></thead><tbody id="scheduleRows"><tr><td colspan="6" class="empty">No results yet.</td></tr></tbody></table></div>
+        <p class="hint">Start = first execution time • Completion = end of last execution • Waiting = turnaround − service (whole history, so preemption is counted) • Turnaround = completion − arrival • Response = first execution − arrival.</p>
+      </article>
+    </section>
+
+    <section id="resources" class="section">
+      <div class="section-heading"><div><h2>Memory & resource management</h2><p class="muted">Each road approach is a limited resource: vehicles request, get allocated and release lane slots.</p></div></div>
+      <article class="panel">
+        <div class="warn-banner" id="resourceWarn" hidden></div>
+        <div class="table-wrap"><table><thead><tr><th>Direction</th><th>Capacity</th><th>Current allocation</th><th>Available</th><th>Queue demand</th><th>Status</th></tr></thead><tbody id="resourceRows"></tbody></table></div>
+        <div class="note-box"><b>How to read this:</b> <b>Capacity</b> = lane slots per direction. <b>Current allocation</b> = slots held right now (a vehicle <i>requests</i> a slot when it arrives, is <i>allocated</i> one if free, and <i>releases</i> it after crossing). <b>Available</b> = capacity − allocation. <b>Queue demand</b> = vehicles currently wanting that lane. If demand is higher than allocation, a <i>capacity exceeded</i> warning is shown and the extra vehicles wait for a free slot. Lane capacity and intersection capacity are simplified OS-resource analogies, not literal computer memory.</div>
+        <div class="subheading">Resource log (request / allocate / release / warnings)</div>
+        <div id="resourceLog" class="event-log short"><p class="empty">Resource events will appear here.</p></div>
+      </article>
+    </section>
+
+    <section id="scenarios" class="section">
+      <div class="section-heading"><div><h2>Real-time scenario handler</h2><p class="muted">Test different traffic conditions in a safe virtual environment.</p></div></div>
+      <article class="panel">
+        <div class="scenario-grid">
+          <label class="scenario-option"><input type="radio" name="scenario" value="normal" checked><span>🚘</span><b>Normal traffic</b><small>Regular arrivals and signal service</small></label>
+          <label class="scenario-option"><input type="radio" name="scenario" value="congestion"><span>🚗</span><b>Heavy congestion</b><small>Increased workload and queue pressure</small></label>
+          <label class="scenario-option"><input type="radio" name="scenario" value="ambulance"><span>🚑</span><b>Ambulance detected</b><small>Insert critical-priority emergency process</small></label>
+          <label class="scenario-option"><input type="radio" name="scenario" value="accident"><span>🚧</span><b>Traffic accident</b><small>Block and divert an affected approach</small></label>
+          <label class="scenario-option"><input type="radio" name="scenario" value="signal_failure"><span>🚦</span><b>Signal failure</b><small>Activate simulated alternate control</small></label>
+        </div>
+        <div class="settings-row scenario-settings">
+          <label>Affected direction<select id="affectedDirection"><option>North</option><option>South</option><option selected>East</option><option>West</option></select></label>
+          <label>Scenario start time<input id="scenarioStart" type="number" min="0" step="1" value="2"></label>
+          <label>Duration (time units)<input id="scenarioDuration" type="number" min="1" step="1" value="6"></label>
+        </div>
+        <div class="scenario-status" id="scenarioStatus">Selected: Normal traffic</div>
+        <p class="hint">Congestion adds extra cars during the window. Accident blocks the affected approach and diverts vehicles until it clears. Signal failure disables the affected signal (it never shows green) while the other signals keep rotating; an ambulance there is served under manual override. Ambulance injects an ambulance at the start time on the affected approach. Normal operation is restored when the scenario ends. Simplified for an educational single-intersection simulator.</p>
+      </article>
+    </section>
+
+    <section id="reports" class="section">
+      <div class="section-heading"><div><h2>Reports & analytics</h2><p class="muted">Review performance indicators and the simulation event log.</p></div><button class="btn secondary" id="exportBtn">↓ Export CSV</button></div>
+      <article class="panel"><h3>Report summary</h3>
+        <div class="table-wrap"><table><thead><tr><th>Report</th><th>Purpose</th><th>Value</th></tr></thead><tbody id="reportRows"><tr><td colspan="3" class="empty">Run a simulation to generate a report.</td></tr></tbody></table></div>
+      </article>
+      <div class="dashboard-grid">
+        <article class="panel"><h3>Simulation details</h3><div id="summary" class="summary-list"><p class="empty">Run a simulation to generate a report.</p></div></article>
+        <article class="panel"><h3>Simulation activity log</h3><div id="eventLog" class="event-log"><p class="empty">Events will appear here.</p></div></article>
+      </div>
+      <div class="panel disclaimer"><b>Project limitation:</b> This website is a learning simulator. It does not connect to traffic sensors, maps, real vehicles or physical traffic signals. Scenario and resource behaviour are simplified models.</div>
+    </section>
+    <footer>SMART TRAFFIC CONTROL OS • Educational simulation project</footer>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>
